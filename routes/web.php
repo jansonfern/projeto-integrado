@@ -16,23 +16,6 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Rota de debug temporária
-Route::get('/debug', function () {
-    if (auth()->check()) {
-        $user = auth()->user();
-        return response()->json([
-            'user_id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-            'role_check_admin' => $user->role === 'admin',
-            'role_check_medico' => $user->role === 'medico',
-            'role_check_paciente' => $user->role === 'paciente',
-        ]);
-    }
-    return response()->json(['error' => 'Não logado']);
-})->middleware('auth');
-
 // Rotas de autenticação
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

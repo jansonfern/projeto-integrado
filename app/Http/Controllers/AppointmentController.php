@@ -11,6 +11,25 @@ use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
+    private function authorizeAccess(Appointment $appointment): void
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if ($user->isMedico() && $user->doctor && $user->doctor->id === $appointment->doctor_id) {
+            return;
+        }
+
+        if ($user->isPaciente() && $user->patient && $user->patient->id === $appointment->patient_id) {
+            return;
+        }
+
+        abort(403);
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -102,12 +121,14 @@ class AppointmentController extends Controller
 
     public function show(Appointment $appointment)
     {
+        $this->authorizeAccess($appointment);
         $appointment->load(['patient.user', 'doctor.user']);
         return view('appointments.show', compact('appointment'));
     }
 
     public function edit(Appointment $appointment)
     {
+        $this->authorizeAccess($appointment);
         $appointment->load(['patient.user', 'doctor.user']);
         $doctors = Doctor::with('user')->get();
         $patients = Patient::with('user')->get();
@@ -116,13 +137,7 @@ class AppointmentController extends Controller
 
     public function update(Request $request, Appointment $appointment)
     {
-        $user = Auth::user();
-        // Verificar se o usuário tem permissão para editar
-        if (!$user->isAdmin() && 
-            !($user->isMedico() && $user->doctor->id === $appointment->doctor_id) &&
-            !($user->isPaciente() && $user->patient->id === $appointment->patient_id)) {
-            abort(403);
-        }
+        $this->authorizeAccess($appointment);
 
         $data = $request->validate([
             'status' => 'required|in:pendente,confirmada,cancelada',
@@ -146,14 +161,7 @@ class AppointmentController extends Controller
 
     public function cancel(Appointment $appointment)
     {
-        $user = Auth::user();
-        
-        // Verificar se o usuário tem permissão para cancelar
-        if (!$user->isAdmin() && 
-            !($user->isMedico() && $user->doctor->id === $appointment->doctor_id) &&
-            !($user->isPaciente() && $user->patient->id === $appointment->patient_id)) {
-            abort(403);
-        }
+        $this->authorizeAccess($appointment);
 
         $appointment->update(['status' => 'cancelada']);
 
@@ -172,13 +180,7 @@ class AppointmentController extends Controller
 
     public function destroy(Appointment $appointment)
     {
-        $user = Auth::user();
-        
-        if (!$user->isAdmin() && 
-            !($user->isMedico() && $user->doctor->id === $appointment->doctor_id) &&
-            !($user->isPaciente() && $user->patient->id === $appointment->patient_id)) {
-            abort(403);
-        }
+        $this->authorizeAccess($appointment);
 
         $appointment->delete();
         return redirect()->route('appointments.index')->with('success', 'Consulta removida!');

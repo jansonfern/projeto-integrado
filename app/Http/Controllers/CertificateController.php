@@ -2,15 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Certificate;
 use App\Models\Appointment;
-use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class CertificateController extends Controller
 {
     public function generate(Appointment $appointment)
     {
+        $user = Auth::user();
+
+        $canAccess =
+            ($user && $user->isAdmin()) ||
+            ($user && $user->isMedico() && $user->doctor && $user->doctor->id === $appointment->doctor_id) ||
+            ($user && $user->isPaciente() && $user->patient && $user->patient->id === $appointment->patient_id);
+
+        if (!$canAccess) {
+            abort(403);
+        }
+
         if ($appointment->status !== 'confirmada') {
             abort(403, 'Consulta não confirmada.');
         }
