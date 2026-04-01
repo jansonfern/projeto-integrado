@@ -68,9 +68,13 @@ composer install
 
 ### 3. Configurar o Arquivo .env
 
-**IMPORTANTE:** Você precisa criar o arquivo `.env` manualmente, pois este projeto não possui `.env.example`.
+**IMPORTANTE:** Este projeto possui `.env.example`. Crie o `.env` a partir dele e ajuste os valores para seu ambiente.
 
-**Opção 1:** Use o arquivo `CONFIGURACAO_ENV.md` como referência e copie o conteúdo para criar um arquivo `.env` na raiz do projeto.
+**Opção 1:** Copie o arquivo de exemplo:
+
+```bash
+cp .env.example .env
+```
 
 **Opção 2:** Crie o arquivo `.env` manualmente e configure:
 
@@ -295,4 +299,11 @@ Após a instalação bem-sucedida:
 1. Acesse a aplicação em `http://localhost:8000`
 2. Crie um usuário ou faça login
 3. Explore as funcionalidades do sistema
+
+## 📚 Guias Operacionais
+
+- Deploy de produção: `docs/DEPLOY_PRODUCAO.md`
+- Backup e recuperação: `docs/BACKUP_E_RECUPERACAO.md`
+- Checklist comercial: `docs/PRONTIDAO_COMERCIAL.md`
+- Base de LGPD: `docs/LGPD_BASE.md`
 

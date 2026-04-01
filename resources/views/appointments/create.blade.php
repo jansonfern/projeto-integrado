@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
 // Script para carregar horários disponíveis quando selecionar médico e data
 document.getElementById('doctor_id').addEventListener('change', loadAvailableTimes);
 document.getElementById('date').addEventListener('change', loadAvailableTimes);

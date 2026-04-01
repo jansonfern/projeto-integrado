@@ -12,6 +12,7 @@ class DoctorController extends Controller
     public function index()
     {
         $doctors = Doctor::with('user')->get();
+
         return view('doctors.index', compact('doctors'));
     }
 
@@ -49,6 +50,7 @@ class DoctorController extends Controller
     public function show(Doctor $doctor)
     {
         $doctor->load(['user', 'appointments.patient.user', 'schedules']);
+
         return view('doctors.show', compact('doctor'));
     }
 
@@ -61,8 +63,8 @@ class DoctorController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $doctor->user_id,
-            'crm' => 'required|string|max:20|unique:doctors,crm,' . $doctor->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$doctor->user_id,
+            'crm' => 'required|string|max:20|unique:doctors,crm,'.$doctor->id,
             'specialty' => 'required|string|max:255',
             'password' => 'nullable|string|min:8',
         ]);
@@ -72,7 +74,7 @@ class DoctorController extends Controller
             'email' => $data['email'],
         ];
 
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $userData['password'] = Hash::make($data['password']);
         }
 
@@ -89,6 +91,7 @@ class DoctorController extends Controller
     public function destroy(Doctor $doctor)
     {
         $doctor->user->delete();
+
         return redirect()->route('doctors.index')->with('success', 'Médico removido com sucesso!');
     }
-} 
+}

@@ -10,7 +10,7 @@ class Patient extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'cpf', 'birth_date', 'phone', 'cep', 'street', 'city', 'state'
+        'user_id', 'cpf', 'birth_date', 'phone', 'cep', 'street', 'city', 'state',
     ];
 
     protected $casts = [
@@ -26,4 +26,4 @@ class Patient extends Model
     {
         return $this->hasMany(Appointment::class);
     }
-} 
+}

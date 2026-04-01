@@ -10,7 +10,7 @@ class Schedule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'doctor_id', 'date', 'available_time', 'is_available'
+        'doctor_id', 'date', 'available_time', 'is_available',
     ];
 
     protected $casts = [
@@ -23,4 +23,4 @@ class Schedule extends Model
     {
         return $this->belongsTo(Doctor::class);
     }
-} 
+}

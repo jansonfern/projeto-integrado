@@ -10,7 +10,7 @@ class Doctor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'crm', 'specialty', 'phone'
+        'user_id', 'crm', 'specialty', 'phone',
     ];
 
     public function user()
@@ -27,4 +27,4 @@ class Doctor extends Model
     {
         return $this->hasMany(Schedule::class);
     }
-} 
+}

@@ -15,7 +15,7 @@ class ProfileController extends Controller
         $crm = null;
         $cpf = null;
         $birthDate = null;
-        
+
         if ($user->role === 'paciente' && $user->patient) {
             $phone = $user->patient->phone;
             $cpf = $user->patient->cpf;
@@ -24,7 +24,7 @@ class ProfileController extends Controller
             $phone = $user->doctor->phone ?? '';
             $crm = $user->doctor->crm;
         }
-        
+
         return view('profile.edit', compact('user', 'phone', 'crm', 'cpf', 'birthDate'));
     }
 
@@ -33,14 +33,14 @@ class ProfileController extends Controller
         $user = Auth::user();
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $user->name = $data['name'];
         $user->email = $data['email'];
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
         $user->save();
@@ -56,4 +56,4 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit')->with('success', 'Dados atualizados com sucesso!');
     }
-} 
+}

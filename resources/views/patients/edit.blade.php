@@ -1,15 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="animate-fade-in-up">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4>Editar Paciente</h4>
-                    <a href="{{ route('patients.show', $patient) }}" class="btn btn-secondary">Voltar</a>
+        <div class="col-lg-9 col-xl-8">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{{ route('patients.show', $patient) }}" class="btn btn-outline-secondary btn-sm rounded-circle" style="width: 40px; height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Voltar">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-0"><i class="fas fa-user-edit text-primary me-2"></i>Editar paciente</h1>
+                    <p class="text-muted small mb-0 mt-1">{{ $patient->user->name }}</p>
                 </div>
-                <div class="card-body">
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
                     <form action="{{ route('patients.update', $patient) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -125,8 +130,11 @@
                             @enderror
                         </div>
                         
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Atualizar</button>
+                        <div class="d-flex flex-wrap gap-2 justify-content-end pt-3 border-top mt-2">
+                            <a href="{{ route('patients.show', $patient) }}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar alterações
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -134,4 +142,46 @@
         </div>
     </div>
 </div>
+
+<script nonce="{{ $cspNonce ?? '' }}">
+(() => {
+    const cep = document.getElementById('cep');
+    const street = document.getElementById('street');
+    const city = document.getElementById('city');
+    const state = document.getElementById('state');
+
+    if (!cep || !street || !city || !state) return;
+
+    async function lookupCep(raw) {
+        const digits = (raw || '').toString().replace(/\D/g, '');
+        if (digits.length !== 8) return null;
+
+        const res = await fetch(`/api/cep/${digits}`, {
+            headers: { 'Accept': 'application/json' },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'Erro ao consultar CEP');
+        return data;
+    }
+
+    let lastValue = '';
+    cep.addEventListener('blur', async () => {
+        const value = cep.value;
+        if (!value || value === lastValue) return;
+        lastValue = value;
+
+        try {
+            const data = await lookupCep(value);
+            if (!data) return;
+
+            if (!street.value) street.value = data.street || '';
+            if (!city.value) city.value = data.city || '';
+            if (!state.value) state.value = (data.state || '').toUpperCase();
+        } catch (e) {
+            // ignore
+        }
+    });
+})();
+</script>
 @endsection 

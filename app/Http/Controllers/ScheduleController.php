@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Schedule;
 use App\Models\Doctor;
+use App\Models\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +12,7 @@ class ScheduleController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user->isAdmin()) {
             $schedules = Schedule::with('doctor.user')->get();
         } else {
@@ -20,13 +20,14 @@ class ScheduleController extends Controller
                 ->where('doctor_id', $user->doctor->id)
                 ->get();
         }
-        
+
         return view('schedules.index', compact('schedules'));
     }
 
     public function create()
     {
         $doctors = Doctor::with('user')->get();
+
         return view('schedules.create', compact('doctors'));
     }
 
@@ -61,6 +62,7 @@ class ScheduleController extends Controller
     public function edit(Schedule $schedule)
     {
         $doctors = Doctor::with('user')->get();
+
         return view('schedules.edit', compact('schedule', 'doctors'));
     }
 
@@ -74,12 +76,14 @@ class ScheduleController extends Controller
         ]);
 
         $schedule->update($data);
+
         return redirect()->route('schedules.index')->with('success', 'Horário atualizado com sucesso!');
     }
 
     public function destroy(Schedule $schedule)
     {
         $schedule->delete();
+
         return redirect()->route('schedules.index')->with('success', 'Horário removido com sucesso!');
     }
 
@@ -94,10 +98,10 @@ class ScheduleController extends Controller
             ->where('date', $data['date'])
             ->where('is_available', true)
             ->pluck('available_time')
-            ->map(function($time) {
+            ->map(function ($time) {
                 return date('H:i', strtotime($time));
             });
 
         return response()->json($availableTimes);
     }
-} 
+}

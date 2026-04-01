@@ -10,12 +10,12 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect('login');
         }
 
         $user = Auth::user();
-        
+
         foreach ($roles as $role) {
             if ($user->role === $role) {
                 return $next($request);
@@ -24,4 +24,4 @@ class CheckRole
 
         abort(403, 'Acesso negado.');
     }
-} 
+}

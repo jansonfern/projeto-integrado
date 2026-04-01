@@ -8,6 +8,7 @@ use App\Models\Patient;
 use App\Models\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class AppointmentController extends Controller
 {
@@ -30,44 +31,70 @@ class AppointmentController extends Controller
         abort(403);
     }
 
+    /**
+     * Mesma regra de data que o agendamento manual (store): somente após hoje.
+     */
+    private function bookingDatePassesPolicy(string $date): bool
+    {
+        return ! Validator::make(
+            ['date' => $date],
+            ['date' => 'required|date|after:today']
+        )->fails();
+    }
+
+    private function slotHasActiveConflict(int $doctorId, string $date, string $time): bool
+    {
+        return Appointment::query()
+            ->where('doctor_id', $doctorId)
+            ->where('date', $date)
+            ->where('time', $time)
+            ->where('status', '!=', 'cancelada')
+            ->exists();
+    }
+
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user->isAdmin()) {
             $appointments = Appointment::with(['patient.user', 'doctor.user'])->get();
         } elseif ($user->isMedico()) {
-            $appointments = Appointment::with(['patient.user', 'doctor.user'])
-                ->where('doctor_id', $user->doctor->id)
-                ->get();
+            $appointments = $user->doctor
+                ? Appointment::with(['patient.user', 'doctor.user'])
+                    ->where('doctor_id', $user->doctor->id)
+                    ->get()
+                : collect();
         } else {
-            $appointments = Appointment::with(['patient.user', 'doctor.user'])
-                ->where('patient_id', $user->patient->id)
-                ->get();
+            $appointments = $user->patient
+                ? Appointment::with(['patient.user', 'doctor.user'])
+                    ->where('patient_id', $user->patient->id)
+                    ->get()
+                : collect();
         }
-        
+
         return view('appointments.index', compact('appointments'));
     }
 
     public function create()
     {
         $user = Auth::user();
-        
+
         // Verificar se o usuário é um paciente
-        if (!$user->isPaciente()) {
+        if (! $user->isPaciente()) {
             return redirect()->route('appointments.index')->withErrors(['error' => 'Apenas pacientes podem agendar consultas.']);
         }
 
         $doctors = Doctor::with('user')->get();
+
         return view('appointments.create', compact('doctors'));
     }
 
     public function store(Request $request)
     {
         $user = Auth::user();
-        
+
         // Verificar se o usuário é um paciente
-        if (!$user->isPaciente()) {
+        if (! $user->isPaciente()) {
             return back()->withErrors(['error' => 'Apenas pacientes podem agendar consultas.']);
         }
 
@@ -78,11 +105,11 @@ class AppointmentController extends Controller
         ]);
 
         $patient = $user->patient;
-        
-        if (!$patient) {
+
+        if (! $patient) {
             return back()->withErrors(['error' => 'Perfil de paciente não encontrado.']);
         }
-        
+
         // Verificar se o horário está disponível
         $schedule = Schedule::where('doctor_id', $data['doctor_id'])
             ->where('date', $data['date'])
@@ -90,18 +117,11 @@ class AppointmentController extends Controller
             ->where('is_available', true)
             ->first();
 
-        if (!$schedule) {
+        if (! $schedule) {
             return back()->withErrors(['time' => 'Horário não disponível.']);
         }
 
-        // Verificar se não há consulta agendada no mesmo horário
-        $existingAppointment = Appointment::where('doctor_id', $data['doctor_id'])
-            ->where('date', $data['date'])
-            ->where('time', $data['time'])
-            ->where('status', '!=', 'cancelada')
-            ->first();
-
-        if ($existingAppointment) {
+        if ($this->slotHasActiveConflict($data['doctor_id'], $data['date'], $data['time'])) {
             return back()->withErrors(['time' => 'Horário já ocupado.']);
         }
 
@@ -123,6 +143,7 @@ class AppointmentController extends Controller
     {
         $this->authorizeAccess($appointment);
         $appointment->load(['patient.user', 'doctor.user']);
+
         return view('appointments.show', compact('appointment'));
     }
 
@@ -132,6 +153,7 @@ class AppointmentController extends Controller
         $appointment->load(['patient.user', 'doctor.user']);
         $doctors = Doctor::with('user')->get();
         $patients = Patient::with('user')->get();
+
         return view('appointments.edit', compact('appointment', 'doctors', 'patients'));
     }
 
@@ -151,11 +173,14 @@ class AppointmentController extends Controller
 
     public function confirm(Appointment $appointment)
     {
-        if (!Auth::user()->isMedico() || Auth::user()->doctor->id !== $appointment->doctor_id) {
+        $user = Auth::user();
+
+        if (! $user->isMedico() || ! $user->doctor || (int) $user->doctor->id !== (int) $appointment->doctor_id) {
             abort(403);
         }
 
         $appointment->update(['status' => 'confirmada']);
+
         return back()->with('success', 'Consulta confirmada!');
     }
 
@@ -183,22 +208,23 @@ class AppointmentController extends Controller
         $this->authorizeAccess($appointment);
 
         $appointment->delete();
+
         return redirect()->route('appointments.index')->with('success', 'Consulta removida!');
     }
 
     public function availableSlots()
     {
         $user = Auth::user();
-        
-        if (!$user->isPaciente()) {
+
+        if (! $user->isPaciente()) {
             return redirect()->route('appointments.index')->withErrors(['error' => 'Apenas pacientes podem agendar consultas.']);
         }
 
-        // Buscar horários disponíveis para os próximos 7 dias
+        // Horários alinhados à regra de agendamento (after:today): só datas após hoje, até 7 dias à frente
         $availableSlots = Schedule::with(['doctor.user'])
             ->where('is_available', true)
-            ->where('date', '>=', now()->format('Y-m-d'))
-            ->where('date', '<=', now()->addDays(7)->format('Y-m-d'))
+            ->where('date', '>', now()->toDateString())
+            ->where('date', '<=', now()->addDays(7)->toDateString())
             ->orderBy('date')
             ->orderBy('available_time')
             ->get()
@@ -210,8 +236,8 @@ class AppointmentController extends Controller
     public function quickBook(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->isPaciente()) {
+
+        if (! $user->isPaciente()) {
             return back()->withErrors(['error' => 'Apenas pacientes podem agendar consultas.']);
         }
 
@@ -220,25 +246,22 @@ class AppointmentController extends Controller
         ]);
 
         $patient = $user->patient;
-        
-        if (!$patient) {
+
+        if (! $patient) {
             return back()->withErrors(['error' => 'Perfil de paciente não encontrado.']);
         }
 
         $schedule = Schedule::find($data['schedule_id']);
-        
-        if (!$schedule || !$schedule->is_available) {
+
+        if (! $schedule || ! $schedule->is_available) {
             return back()->withErrors(['error' => 'Horário não está mais disponível.']);
         }
 
-        // Verificar se não há consulta agendada no mesmo horário
-        $existingAppointment = Appointment::where('doctor_id', $schedule->doctor_id)
-            ->where('date', $schedule->date)
-            ->where('time', $schedule->available_time)
-            ->where('status', '!=', 'cancelada')
-            ->first();
+        if (! $this->bookingDatePassesPolicy($schedule->date)) {
+            return back()->withErrors(['error' => 'Não é possível agendar para esta data.']);
+        }
 
-        if ($existingAppointment) {
+        if ($this->slotHasActiveConflict($schedule->doctor_id, $schedule->date, $schedule->available_time)) {
             return back()->withErrors(['error' => 'Horário já ocupado.']);
         }
 
@@ -255,4 +278,4 @@ class AppointmentController extends Controller
 
         return redirect()->route('appointments.index')->with('success', 'Consulta agendada com sucesso!');
     }
-} 
+}

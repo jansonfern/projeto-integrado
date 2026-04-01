@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
 use App\Models\Address;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,6 +12,7 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::with('address')->get();
+
         return view('events.index', compact('events'));
     }
 
@@ -49,6 +50,7 @@ class EventController extends Controller
             'city' => $data['city'],
             'state' => $data['state'],
         ]);
+
         return redirect()->route('events.index');
     }
 
@@ -66,12 +68,14 @@ class EventController extends Controller
         ]);
         $event->update($data);
         $event->address->update($request->only(['cep', 'street', 'city', 'state']));
+
         return redirect()->route('events.index');
     }
 
     public function destroy(Event $event)
     {
         $event->delete();
+
         return redirect()->route('events.index');
     }
-} 
+}

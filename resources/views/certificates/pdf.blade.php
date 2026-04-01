@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificado de Consulta</title>
-    <style>
+    <style nonce="{{ $cspNonce ?? '' }}">
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -167,7 +167,7 @@
         </div>
     </div>
     
-    <script>
+    <script nonce="{{ $cspNonce ?? '' }}">
         // Auto-print quando a página carregar
         window.onload = function() {
             if (window.location.search.includes('print=1')) {

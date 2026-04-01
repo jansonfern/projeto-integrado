@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Patient;
-use App\Models\Doctor;
-use App\Models\Schedule;
 use App\Models\Appointment;
+use App\Models\Doctor;
+use App\Models\Patient;
+use App\Models\Schedule;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -115,7 +115,7 @@ class DatabaseSeeder extends Seeder
         // Criar algumas consultas de exemplo
         $patients = Patient::all();
         $doctors = Doctor::all();
-        
+
         if ($patients->count() > 0 && $doctors->count() > 0) {
             Appointment::create([
                 'patient_id' => $patients->first()->id,

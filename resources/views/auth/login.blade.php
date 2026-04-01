@@ -1,64 +1,76 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema Médico</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="max-w-md w-full space-y-8">
-            <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Sistema de Consultas Médicas
-                </h2>
-                <p class="mt-2 text-center text-sm text-gray-600">
-                    Faça login para acessar o sistema
-                </p>
-            </div>
-            <form class="mt-8 space-y-6" action="{{ route('login') }}" method="POST">
-                @csrf
-                <div class="rounded-md shadow-sm -space-y-px">
-                    <div>
-                        <label for="email" class="sr-only">Email</label>
-                        <input id="email" name="email" type="email" required 
-                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm @error('email') border-red-500 @enderror"
-                               placeholder="Email" value="{{ old('email') }}">
+@extends('layouts.app')
+
+@section('title', 'Login')
+
+@section('content')
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <h1 class="h4 text-center mb-2">Sistema de Consultas Medicas</h1>
+                <p class="text-center text-muted mb-4">Faca login para acessar o sistema</p>
+
+                @if (session('status'))
+                    <div class="alert alert-success" role="alert">
+                        {{ session('status') }}
                     </div>
-                    <div>
-                        <label for="password" class="sr-only">Senha</label>
-                        <input id="password" name="password" type="password" required 
-                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                               placeholder="Senha">
-                    </div>
-                </div>
+                @endif
 
                 @error('email')
-                    <div class="text-red-500 text-sm">{{ $message }}</div>
+                    <div class="alert alert-danger" role="alert">
+                        {{ $message }}
+                    </div>
                 @enderror
 
-                <div>
-                    <button type="submit" 
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Entrar
-                    </button>
+                <form action="{{ route('login') }}" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value="{{ old('email') }}"
+                            class="form-control @error('email') is-invalid @enderror"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Senha</label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            class="form-control"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="{{ route('password.request') }}">Esqueci minha senha</a>
                 </div>
-            </form>
 
-            <div class="mt-4 text-center">
-                <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-800">Não tem uma conta? Cadastre-se</a>
-            </div>
+                <div class="text-center mt-4">
+                    <a href="{{ route('register') }}">Nao tem uma conta? Cadastre-se</a>
+                </div>
 
-            <div class="mt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Credenciais de Teste:</h3>
-                <div class="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
-                    <div><strong>Admin:</strong> admin@clinica.com / password</div>
-                    <div><strong>Médico:</strong> joao.silva@clinica.com / password</div>
-                    <div><strong>Paciente:</strong> carlos@email.com / password</div>
+                <hr class="my-4">
+
+                <div>
+                    <h2 class="h6 mb-3">Credenciais de teste</h2>
+                    <div class="small text-muted">
+                        <div><strong>Admin:</strong> admin@clinica.com / password</div>
+                        <div><strong>Medico:</strong> joao.silva@clinica.com / password</div>
+                        <div><strong>Paciente:</strong> carlos@email.com / password</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</body>
-</html> 
+</div>
+@endsection

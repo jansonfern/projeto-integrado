@@ -10,7 +10,7 @@ class Appointment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'patient_id', 'doctor_id', 'date', 'time', 'status', 'notes'
+        'patient_id', 'doctor_id', 'date', 'time', 'status', 'notes',
     ];
 
     protected $casts = [
@@ -32,4 +32,4 @@ class Appointment extends Model
     {
         return $this->hasOne(Certificate::class);
     }
-} 
+}

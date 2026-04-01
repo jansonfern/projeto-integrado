@@ -25,7 +25,6 @@ class DocumentationController extends Controller
 
         $pdf = Pdf::loadView('documentation.pdf', $data);
 
-        return $pdf->download('relatorio_sistema_medico_' . $data['generatedAt']->format('Y-m-d_H-i-s') . '.pdf');
+        return $pdf->download('relatorio_sistema_medico_'.$data['generatedAt']->format('Y-m-d_H-i-s').'.pdf');
     }
 }
-

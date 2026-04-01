@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Models\Doctor;
-use App\Models\Patient;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -16,31 +14,44 @@ class DashboardController extends Controller
         $pendingAppointments = Appointment::where('status', 'pendente')->count();
         $confirmedAppointments = Appointment::where('status', 'confirmada')->count();
         $cancelledAppointments = Appointment::where('status', 'cancelada')->count();
-        
+
         // Consultas por especialidade
         $appointmentsBySpecialty = Appointment::join('doctors', 'appointments.doctor_id', '=', 'doctors.id')
             ->selectRaw('doctors.specialty, COUNT(*) as count')
             ->groupBy('doctors.specialty')
             ->get();
-        
+
         $specialtyLabels = $appointmentsBySpecialty->pluck('specialty');
         $specialtyValues = $appointmentsBySpecialty->pluck('count');
-        
+
         // Consultas por mês
-        $appointmentsByMonth = Appointment::selectRaw('MONTH(date) as month, COUNT(*) as count')
-            ->whereYear('date', date('Y'))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-        
-        $monthLabels = $appointmentsByMonth->pluck('month')->map(function($month) {
+        $driver = DB::connection()->getDriverName();
+        $year = (int) date('Y');
+
+        if ($driver === 'sqlite') {
+            $appointmentsByMonth = Appointment::query()
+                ->selectRaw("CAST(strftime('%m', date) AS INTEGER) as month, COUNT(*) as count")
+                ->whereRaw("strftime('%Y', date) = ?", [(string) $year])
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+        } else {
+            $appointmentsByMonth = Appointment::query()
+                ->selectRaw('MONTH(date) as month, COUNT(*) as count')
+                ->whereYear('date', $year)
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+        }
+
+        $monthLabels = $appointmentsByMonth->pluck('month')->map(function ($month) {
             return date('F', mktime(0, 0, 0, $month, 1));
         });
         $monthValues = $appointmentsByMonth->pluck('count');
-        
+
         $user = auth()->user();
         $patientAppointments = collect();
-        
+
         if ($user->role === 'paciente' && $user->patient) {
             $patientAppointments = \App\Models\Appointment::with(['doctor.user'])
                 ->where('patient_id', $user->patient->id)
@@ -57,7 +68,7 @@ class DashboardController extends Controller
             $totalCancelled = Appointment::where('doctor_id', $user->doctor->id)->where('status', 'cancelada')->count();
 
             // Gráficos por mês para cada status
-            $months = collect(range(1, 12))->map(function($m) {
+            $months = collect(range(1, 12))->map(function ($m) {
                 return date('F', mktime(0, 0, 0, $m, 1));
             });
 
@@ -92,26 +103,26 @@ class DashboardController extends Controller
             $confirmedAppointments = $totalConfirmed;
             $cancelledAppointments = $totalCancelled;
         }
-        
+
         // Garantir que as variáveis dos gráficos estejam sempre definidas
-        if (!isset($months)) {
-            $months = collect(range(1, 12))->map(function($m) {
+        if (! isset($months)) {
+            $months = collect(range(1, 12))->map(function ($m) {
                 return date('F', mktime(0, 0, 0, $m, 1));
             });
         }
-        if (!isset($confirmedPerMonth)) {
+        if (! isset($confirmedPerMonth)) {
             $confirmedPerMonth = collect(array_fill(0, 12, 0));
         }
-        if (!isset($pendingPerMonth)) {
+        if (! isset($pendingPerMonth)) {
             $pendingPerMonth = collect(array_fill(0, 12, 0));
         }
-        if (!isset($cancelledPerMonth)) {
+        if (! isset($cancelledPerMonth)) {
             $cancelledPerMonth = collect(array_fill(0, 12, 0));
         }
 
         return view('dashboard', compact(
             'totalAppointments',
-            'pendingAppointments', 
+            'pendingAppointments',
             'confirmedAppointments',
             'cancelledAppointments',
             'specialtyLabels',
@@ -123,4 +134,4 @@ class DashboardController extends Controller
             'patientAppointments'
         ));
     }
-} 
+}

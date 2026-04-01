@@ -10,7 +10,7 @@ class Event extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title', 'description', 'date', 'organizer_id'
+        'title', 'description', 'date', 'organizer_id',
     ];
 
     public function organizer()
@@ -27,4 +27,4 @@ class Event extends Model
     {
         return $this->hasOne(Address::class);
     }
-} 
+}
